@@ -34,7 +34,7 @@ DEBUG = True
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "ahsan-parvez-tokosofita.pbp.cs.ui.ac.id"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://ahsan-parvez-tokosofita.pbp.cs.ui.ac.id/"
+    "https://ahsan-parvez-tokosofita.pbp.cs.ui.ac.id",
 ]
 
 
