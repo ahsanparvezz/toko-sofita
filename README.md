@@ -247,9 +247,10 @@ Untuk feedback dari saya, tutorialnya sudah cukup bagus, lengkap dan mudah dimen
     Untuk tutorial 2 sudah cukup baik, tapi saya lihat lihat masih belum ada reminder untuk menyalakan auto save atau men save file tiap 5 menit misalnnya, mungkin itu saja.
 
 7. Mengakses keempat URL di poin 2 menggunakan Postman, membuat screenshot dari hasil akses URL pada Postman, dan menambahkannya ke dalam README.md.
+###  Data XML
 ![XML All](images/1.png)
 
-### Semua Data JSON
+###  Data JSON
 ![JSON All](images/2Json.png)
 
 ### XML by ID
