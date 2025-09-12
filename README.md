@@ -165,3 +165,7 @@ Menurut saya, Django dipilih menjadi permulaan adalah karena Django udah kayak p
 
 ## **Feedback**
 Untuk feedback dari saya, tutorialnya sudah cukup bagus, lengkap dan mudah dimengerti. Mungkin tambahan dari saya, tambahkan saran aktivasi auto save karena saya dan teman2 saya lebih dari sekali error karena autosave tidak on.
+
+
+## Tugas 3
+Checklist 1
