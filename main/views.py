@@ -66,3 +66,7 @@ def show_json_by_id(request, id):
         return HttpResponse(json_data, content_type="application/json")
     except Product.DoesNotExist:
         return HttpResponse(status=404)
+    
+
+
+# komentar tambahan
