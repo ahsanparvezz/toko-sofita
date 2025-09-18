@@ -258,3 +258,44 @@ Untuk feedback dari saya, tutorialnya sudah cukup bagus, lengkap dan mudah dimen
 
 ### JSON by ID
 ![JSON by ID](images/4Json.png)
+
+
+## Tugas 4
+1. Apa itu Django AuthenticationForm? Jelaskan juga kelebihan dan kekurangannya.
+    Authenticastion form di Django adalah form bawaan yang dipakai untuk proses login user. Form ini otomatis menangani validasi username dan password, kemudian memeriksa kredensialnya terhadap database pengguna yang terdaftar. Jadi, alih alih kita harus membuat form login dari nol, Django sudah menyiapkan tools yang siap untuk dipakai
+    
+    Kelebihan utamanya adalah kemudahan dan keamanan. Kita bisa menggunakannya dengan cepat, sudah mencakupi validasi dasar dan keamanananya yang cukup baik. Namun kekurangnnya terletak pada kekakuannya, form ini sangat dasar dan tidak fleksibel jika mau menambahkan field lain seperti login dengan email atau mau ubah tampilannya.
+
+2. Apa perbedaan antara autentikasi dan otorisasi? Bagaiamana Django mengimplementasikan kedua konsep tersebut?
+    Perbedaan antara autentikasi dan otorisasi terletak pada tujuannya. Autentikasi adalah proses untuk memverifikasi identitas pengguna, atau menjawab pertanyaan "Siapa kamu?", dengan memastikan kredensial seperti username dan password sesuai dengan data yang tersimpan. Sedangkan, otorisasi terjadi setelah pengguna berhasil terautentikasi dan bertujuan untuk menentukan hak akses atau tindakan apa yang diizinkan untuk pengguna tersebut, menjawab pertanyaan "Apa yang boleh kamu lakukan?".
+
+    Django mengimplementasikan autentikasi melalui modul django.contrib.auth yang menyediakan sistem untuk mengelola user, group, dan izin. Untuk otorisasi, Django menggunakan mekanisme permissions yang dapat ditetapkan pada level user atau group, serta decorator seperti @login_required dan @permission_required yang memungkinkan developer membatasi akses ke view berdasarkan status login atau hak akses spesifik pengguna.
+
+
+3. Apa saja kelebihan dan kekurangan session dan cookies dalam konteks menyimpan state di aplikasi web?
+    Cookies dan session sama-sama digunakan untuk menyimpan state di aplikasi web, namun punya kelebihan dan kekurangan masing-masing. Cookies disimpan di browser pengguna sehingga ringan bagi server dan mudah digunakan untuk menyimpan data sederhana, tetapi kurang aman karena bisa dilihat atau dimodifikasi oleh user jika tidak dienkripsi. Sementara itu, session disimpan di server dan hanya menyimpan ID session di browser, sehingga lebih aman untuk data sensitif dan sulit dimanipulasi langsung oleh user, namun membebani server karena perlu menyimpan data setiap user yang aktif.
+
+4. Apakah penggunaan cookies aman secara default dalam pengembangan web, atau apakah ada risiko potensial yang harus diwaspadai? Bagaimana Django menangani hal tersebut?
+    Penggunaan cookies tidak aman secara default karena data yang disimpan di sisi klien rentan terhadap serangan seperti pencurian data atau pemalsuan (cross-site scripting). Risiko utama termasuk pencurian informasi sensitif dan session hijacking dimana penyerang dapat menyamar sebagai pengguna yang sah. Django sendiri sudah menyediakan mekanisme untuk meminimalkan risiko ini, misalnya dengan opsi HttpOnly agar cookie tidak bisa diakses lewat JavaScript, Secure agar hanya terkirim lewat HTTPS, serta CSRF token untuk mencegah serangan cross-site request forgery. Jadi, cookies bisa relatif aman digunakan asalkan dikonfigurasi dengan benar sesuai praktik keamanan yang disarankan.
+
+5. Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step (bukan hanya sekadar mengikuti tutorial).
+    **Checklist 1**
+    Di views.py, import modul yang diperlukan
+    Buat fungsi register yang menangani pembuatan akun baru dengan UserCreationForm. Simpan user dan login otomatis setelah registrasi.
+    Buat fungsi login_user untuk autentikasi dengan authenticate() dan login().
+    Buat fungsi logout_user untuk logout menggunakan logout().
+    Di main.html, tambahkan tombol kondisional untuk me logout login dan juga register
+    Kemudian tambahkan path yang dibutuhkan di urls.py
+
+    **Checklist 2**
+    Meregister 2 akun dummy dan membuat 3 product masing masing
+
+    **Checklist 3**
+    Di models.py, tambahkan user di class models jalankan makemigrations dan migrate kemudian modifikasi di views.py sehingga bisa membedakan show product all dan show product per user dan juga Di views.py, modifikasi fungsi create_product dengan dengan untuk product per usernya menggunakan form.is_valid()
+    lalu tambahkan di main.html button all product dan button untuk product sendiri
+
+    **Checklist 4**
+    Di show_main, tambahkan context:
+    'username': request.user.username,
+    'last_login': request.COOKIES.get('last_login', 'Not available')
+    kemudian meng set cookie di views.py dengan menggunakan .set_cookie()
