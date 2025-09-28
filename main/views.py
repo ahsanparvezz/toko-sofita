@@ -22,10 +22,19 @@ def show_main(request):
     else:
         product_list = Product.objects.filter(user=request.user)
 
+    # Tambahkan properti bintang
+    for product in product_list:
+        rating = int(product.rating or 0)
+        if rating > 5:  
+            rating = 5
+        product.filled_stars = range(rating)
+        product.empty_stars = range(5 - rating)
+
 
     context = {
         'app_name' : 'Toko Sofita',
         'name': request.user.username,
+        'npm' : '2406496050',
         'class': 'PBP E',
         'product_list': product_list,
         'last_login': request.COOKIES.get('last_login', 'Never')
@@ -51,10 +60,14 @@ def create_product(request):
     return render(request, "create_product.html", context)
 
 
+
 # Menampilkan detail produk tertentu
 @login_required(login_url='/login')
 def show_product(request, id):
     product = get_object_or_404(Product, pk=id)
+
+    # Panggil fungsi increment_views
+    product.increment_views()
 
     context = {
         'product': product,
@@ -122,6 +135,24 @@ def logout_user(request):
     response = HttpResponseRedirect(reverse('main:login'))
     response.delete_cookie('last_login')
     return response
+
+def edit_product(request, id):
+    product = get_object_or_404(Product, pk=id)
+    form = ProductForm(request.POST or None, instance=product)
+    if form.is_valid() and request.method == 'POST':
+        form.save()
+        return redirect('main:show_main')
+
+    context = {
+        'form': form
+    }
+
+    return render(request, "edit_product.html", context)
+
+def delete_product(request, id):
+    product = get_object_or_404(Product, pk=id)
+    product.delete()
+    return HttpResponseRedirect(reverse('main:show_main'))
 
 
 

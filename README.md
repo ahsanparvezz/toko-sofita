@@ -299,3 +299,64 @@ Untuk feedback dari saya, tutorialnya sudah cukup bagus, lengkap dan mudah dimen
     'username': request.user.username,
     'last_login': request.COOKIES.get('last_login', 'Not available')
     kemudian meng set cookie di views.py dengan menggunakan .set_cookie()
+
+## Tugas 5
+1. Jika terdapat beberapa CSS selector untuk suatu elemen HTML, jelaskan urutan prioritas pengambilan CSS selector tersebut!
+    Dalam penerapan CSS, urutan prioritas pengambilan style untuk suatu elemen HTML ditentukan oleh tingkat spesifisitas (specificity) yang dihitung berdasarkan jenis selektornya, di mana aturan yang memiliki spesifisitas lebih tinggi akan selalu mengalahkan aturan dengan spesifisitas lebih rendah, dengan urutan kekuatan dari yang terkuat yaitu deklarasi !important, diikuti oleh inline style yang ditulis langsung pada elemen, kemudian ID selector, lalu class selector, attribute selector, dan pseudo-class, serta yang terlemah adalah element selector dan pseudo-element; namun jika beberapa selector memiliki tingkat spesifisitas yang persis sama, maka aturan yang dideklarasikan terakhir dalam stylesheet-lah yang akan diterapkan.
+
+2. Mengapa responsive design menjadi konsep yang penting dalam pengembangan aplikasi web? Berikan contoh aplikasi yang sudah dan belum menerapkan responsive design, serta jelaskan mengapa!
+    Responsive design penting dalam pengembangan aplikasi web karena memungkinkan tampilan menyesuaikan diri secara otomatis dengan berbagai ukuran layar, mulai dari desktop, tablet, hingga smartphone, sehingga pengalaman pengguna tetap nyaman tanpa harus melakukan zoom in atau scroll berlebihan. Contoh aplikasi yang sudah menerapkan responsive design adalah Tokopedia, di mana layout, menu, dan gambar menyesuaikan ukuran layar sehingga tetap mudah diakses di perangkat apapun. Sebaliknya, beberapa website lama instansi pemerintahan sering kali belum menerapkan responsive design, sehingga ketika dibuka di smartphone tampilannya mengecil, teks sulit dibaca, dan navigasi jadi kurang praktis. Hal ini menunjukkan bahwa tanpa responsive design, aksesibilitas dan kenyamanan pengguna akan sangat berkurang.
+
+3. Jelaskan perbedaan antara margin, border, dan padding, serta cara untuk mengimplementasikan ketiga hal tersebut!
+    Margin, border, dan padding adalah tiga properti CSS yang mengatur box model dari sebuah elemen, di mana padding adalah ruang transparan di antara konten elemen dan batasnya (border), berfungsi untuk memberi jarak di dalam elemen, sementara border sendiri adalah garis dekoratif yang mengelilingi padding dan konten, sedangkan margin adalah ruang transparan di luar border yang berfungsi untuk membuat jarak antara elemen tersebut dengan elemen-elemen di sekitarnya, untuk mengimplementasikannya, ketiganya dapat didefinisikan dalam deklarasi CSS menggunakan properti seperti padding: 20px; untuk memberi jarak dalam, border: 2px solid black; untuk membuat garis batas berwarna hitam, dan margin: 10px; untuk memberi jarak luar.
+
+4. Jelaskan konsep flex box dan grid layout beserta kegunaannya!
+    Flexbox dan Grid Layout adalah dua sistem tata letak modern dalam CSS yang digunakan untuk mengatur posisi elemen secara lebih fleksibel dan efisien. Flexbox berfokus pada pengaturan elemen dalam satu dimensi, baik horizontal (row) maupun vertikal (column), sehingga cocok digunakan untuk menyusun navigasi, tombol, atau elemen yang berjajar rapi dalam satu baris atau kolom. Sementara itu, Grid Layout bekerja dalam dua dimensi (baris dan kolom) sekaligus, sehingga lebih cocok untuk membuat struktur halaman yang kompleks seperti dashboard atau layout majalah online. Contoh penerapan Flexbox adalah display: flex; justify-content: center; align-items: center; untuk merapikan elemen di tengah, sedangkan Grid dapat diterapkan dengan display: grid; grid-template-columns: repeat(3, 1fr); untuk membuat tiga kolom yang seimbang. Kedua konsep ini membantu developer mengatur desain web agar lebih responsif, terstruktur, dan mudah disesuaikan dengan berbagai perangkat.
+
+5. Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step (bukan hanya sekadar mengikuti tutorial)!
+**Checklist 1**
+Implementasikan fungsi untuk menghapus dan mengedit product.
+    Tambahkan script untuk Tailwind CSS di file base.html agar memudahkan kustomisasi
+
+    Buat fungsi edit_product dan delete_product di views.py.
+
+    Tambahkan file baru edit_product.html untuk form edit product.
+
+    Daftarkan URL untuk edit_product dan delete_product di urls.py.
+
+    Ubah card_product.html agar setiap card product menampilkan button Edit dan Delete.
+
+**Checklist 2**
+Kustomisasi halaman login, register, tambah product, edit product, dan detail product semenarik mungkin.
+    Halaman login, register, tambah product, edit product, dan detail product
+
+    Login: ubah login.html agar tampilan sesuai dengan yang diinginkan
+
+    Register: ubah register.html dengan styling serupa login agar konsisten.
+
+    Tambah product dan Edit product: gunakan desain form card di card_product.
+
+    Detail product: lakukan styling di product_detail.html agar informasi lebih rapi.
+
+**Checklist 3**
+Kustomisasi halaman daftar product menjadi lebih menarik dan responsive. Kemudian, perhatikan kondisi berikut:
+    Jika pada aplikasi belum ada product yang tersimpan, halaman daftar product akan menampilkan gambar dan pesan bahwa belum ada product yang terdaftar.
+    Jika sudah ada product yang tersimpan, halaman daftar product akan menampilkan detail setiap product dengan menggunakan card (tidak boleh sama persis dengan desain pada Tutorial!).
+        Pertama menyiapkan gambar atau logo yang ingin ditampilkan jika product tidak ada, kemudian menambahkan di kondisi jika tidak ada product maka akan menampilkan itu di card_product.html, kemudian mendesain card_product sesuai dengan apa yang diinginkan
+
+**Checklist 4**
+Untuk setiap card product, buatlah dua buah button untuk mengedit dan menghapus product pada card tersebut!
+    Setiap card product menampilkan dua button:
+
+    Edit → menuju halaman edit_product.html.
+
+    Delete → menghapus product langsung dari card.
+
+**Checklist 5**
+Buatlah navigation bar (navbar) untuk fitur-fitur pada aplikasi yang responsive terhadap perbedaan ukuran device, khususnya mobile dan desktop.
+    Buat file baru navbar.html di folder templates.
+
+    Tautkan navbar.html ke main.html agar tampil di setiap halaman.
+
+    Styling navbar dengan Tailwind agar responsive di desktop maupun mobile.
+

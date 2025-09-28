@@ -1,32 +1,97 @@
 {% extends 'base.html' %}
 
 {% block meta %}
-<title>Login</title>
+<title>Login - Toko Sofita</title>
 {% endblock meta %}
 
 {% block content %}
-<div class="login">
-  <h1>Login</h1>
+<div class="min-h-screen flex items-center justify-center bg-black">
+  <div class="bg-[#141414] p-8 rounded-lg shadow-lg w-full max-w-md">
+    
+    <!-- Title -->
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-white mb-2">Sign In</h1>
+      <p class="text-gray-400">Welcome back to Toko Sofita</p>
+    </div>
 
-  <form method="POST" action="">
-    {% csrf_token %}
-    <table>
-      {{ form.as_table }}
-      <tr>
-        <td></td>
-        <td><input class="btn login_btn" type="submit" value="Login" /></td>
-      </tr>
-    </table>
-  </form>
+    <!-- Error Messages -->
+    {% if form.non_field_errors %}
+      <div class="mb-4">
+        {% for error in form.non_field_errors %}
+          <div class="bg-red-600 text-white text-sm p-3 rounded mb-2">
+            {{ error }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
 
-  {% if messages %}
-  <ul>
-    {% for message in messages %}
-    <li>{{ message }}</li>
-    {% endfor %}
-  </ul>
-  {% endif %} Don't have an account yet?
-  <a href="{% url 'main:register' %}">Register Now</a>
+    {% if form.errors %}
+      <div class="mb-4">
+        {% for field, errors in form.errors.items %}
+          {% if field != '__all__' %}
+            {% for error in errors %}
+              <div class="bg-red-600 text-white text-sm p-3 rounded mb-2">
+                <strong>{{ field|title }}:</strong> {{ error }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Login Form -->
+    <form method="POST" action="" class="space-y-6">
+      {% csrf_token %}
+
+      <div>
+        <label for="username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
+        <input 
+          id="username" 
+          name="username" 
+          type="text" 
+          required 
+          class="w-full px-4 py-3 bg-[#333] text-white border border-[#555] rounded focus:outline-none focus:border-red-600"
+          placeholder="Enter your username">
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+        <input 
+          id="password" 
+          name="password" 
+          type="password" 
+          required 
+          class="w-full px-4 py-3 bg-[#333] text-white border border-[#555] rounded focus:outline-none focus:border-red-600"
+          placeholder="Enter your password">
+      </div>
+
+      <button 
+        type="submit" 
+        class="w-full bg-red-600 text-white font-medium py-3 px-4 rounded hover:bg-red-700 transition-colors">
+        Sign In
+      </button>
+    </form>
+
+    <!-- Messages -->
+    {% if messages %}
+      <div class="mt-6">
+        {% for message in messages %}
+          <div class="bg-gray-800 text-gray-200 text-sm p-3 rounded mb-2">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Register Link -->
+    <div class="mt-6 text-center border-t border-gray-700 pt-6">
+      <p class="text-gray-400 text-sm">
+        New to Toko Sofita? 
+        <a href="{% url 'main:register' %}" class="text-red-600 hover:underline">
+          Register Now
+        </a>
+      </p>
+    </div>
+  </div>
 </div>
-
 {% endblock content %}

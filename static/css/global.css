@@ -1,0 +1,68 @@
+.form-style {
+    background-color: #181818; /* Hitam */
+    color: #ffffff; /* Teks putih */
+}
+
+.form-style form input, 
+.form-style form textarea, 
+.form-style form select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 2px solid #3a3a3a;
+    border-radius: 0.375rem;
+    background-color: #2d2d2d;
+    color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.form-style form input:hover, 
+.form-style form textarea:hover, 
+.form-style form select:hover {
+    border-color: #e50914;
+    background-color: #3a3a3a;
+}
+
+.form-style form input:focus, 
+.form-style form textarea:focus, 
+.form-style form select:focus {
+    outline: none;
+    border-color: #e50914;
+    box-shadow: 0 0 6px rgba(229, 9, 20, 0.7);
+}
+
+/* Checkbox */
+.form-style input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: 2px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: white;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.form-style input[type="checkbox"]:checked {
+    background-color: #e50914; /* Merah Netflix */
+    border-color: #e50914;
+}
+
+.form-style input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.form-style input[type="checkbox"]:focus {
+    outline: none;
+    border-color: #e50914;
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.3);
+}
