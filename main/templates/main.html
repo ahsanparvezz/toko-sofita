@@ -7,60 +7,495 @@
 
 {% block content %}
 {% include 'navbar.html' %}
+
 <div class="bg-black w-full pt-16 min-h-screen text-white">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- Header Section -->
+    <!-- Header -->
     <div class="relative mb-12 rounded-xl overflow-hidden bg-gradient-to-r from-black via-neutral-900 to-black p-8 shadow-lg">
-      <!-- Background Glow / Decorative -->
       <div class="absolute inset-0 bg-[url('{% static "image/netflix-bg.jpg" %}')] bg-cover bg-center opacity-20"></div>
       <div class="relative z-10">
         <h1 class="text-5xl md:text-6xl font-extrabold text-white tracking-tight mb-4">
           Latest <span class="text-red-600">Products</span>
         </h1>
         <p class="text-lg md:text-xl text-gray-300 max-w-2xl">
-          Discover the <span class="text-white font-semibold">newest items</span> available in our store, 
-          curated just for you.
+          Discover the <span class="text-white font-semibold">newest items</span> available in our store.
         </p>
       </div>
     </div>
 
-    <!-- Filter Section -->
+    <!-- Filter & Add -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 bg-neutral-900 rounded-lg border border-neutral-700 p-4">
       <div class="flex space-x-3 mb-4 sm:mb-0">
-        <a href="?" class="{% if request.GET.filter == 'all' or not request.GET.filter  %} bg-red-600 text-white{% else %}bg-neutral-800 text-gray-300 border border-neutral-600{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-red-700">
-          All Products
-        </a>
-        <a href="?filter=my" class="{% if request.GET.filter == 'my' %} bg-red-600 text-white{% else %}bg-neutral-800 text-gray-300 border border-neutral-600{% endif %} px-4 py-2 rounded-md font-medium transition-colors hover:bg-red-700">
-          My Products
-        </a>
-      </div>
+      <button id="filter-all" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">All Products</button>
+      <button id="filter-my" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">My Products</button>
+      <button id="btn-refresh" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">Refresh</button>
+    </div>
       {% if user.is_authenticated %}
-        <div class="text-sm text-gray-400">
-          Last login: {{ last_login }}
-        </div>
+      <div class="flex items-center space-x-4">
+        <div class="text-sm text-gray-400">Last login: {{ last_login }}</div>
+        <button id="btn-add-product" class="bg-gray-600 px-4 py-2 rounded hover:bg-gray-700 text-white text-sm">+ Add Product</button>
+      </div>
       {% endif %}
+    </div>
+    
+
+    <!-- Loading / Error / Empty States -->
+    <div id="loading" class="bg-white rounded-lg border border-gray-200 p-12 text-center hidden">
+      <svg class="animate-spin h-8 w-8 text-red-600 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <p class="text-gray-600 mt-3">Loading products...</p>
+    </div>
+    <div id="error" class="hidden bg-red-100 text-red-700 p-6 rounded-lg text-center"></div>
+    <div id="empty" class="bg-white rounded-lg border border-gray-200 p-12 text-center hidden">
+      <img src="{% static 'image/no-product.png' %}" alt="No Product" class="mx-auto w-32 h-32 mb-4">
+      <h3 class="text-lg font-medium text-gray-900 mb-2">No Product found</h3>
+      <p class="text-gray-500 mb-6">Be the first to share Product with the community.</p>
+      <button id="btn-add-empty" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Create Product</button>
     </div>
 
     <!-- Product Grid -->
-    {% if not product_list %}
-      <div class="bg-neutral-900 rounded-lg border border-neutral-700 p-12 text-center">
-        <div class="w-32 h-32 mx-auto mb-4 opacity-70">
-          <img src="{% static 'image/no-product.png' %}" alt="No products available" class="w-full h-full object-contain">
-        </div>
-        <h3 class="text-lg font-medium text-white mb-2">No products found</h3>
-        <p class="text-gray-400 mb-6">Be the first to add products to the store.</p>
-        <a href="{% url 'main:create_product' %}" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
-          Create Product
-        </a>
-      </div>
-    {% else %}
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-        {% for product in product_list %}
-          {% include 'card_product.html' with product=product %}
-        {% endfor %}
-      </div>
-    {% endif %}
+    <div id="grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
   </div>
 </div>
+
+<!-- Modal for Create / Edit Product -->
+<div id="product-form-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-auto">
+  <div class="bg-neutral-900 rounded-lg w-full max-w-md p-6 text-white relative shadow-lg">
+    <h3 class="text-2xl font-bold mb-6" id="modal-title">Add Product</h3>
+
+    <div class="mb-4">
+      <label for="modal-name" class="block text-sm font-medium mb-1">Product Name</label>
+      <input type="text" id="modal-name" placeholder="Enter product name" class="w-full p-3 rounded bg-neutral-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600">
+    </div>
+
+    <div class="mb-4">
+      <label for="modal-price" class="block text-sm font-medium mb-1">Price</label>
+      <input type="number" id="modal-price" placeholder="Enter price" class="w-full p-3 rounded bg-neutral-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600">
+    </div>
+
+    <div class="mb-4">
+      <label for="modal-thumbnail" class="block text-sm font-medium mb-1">Thumbnail URL</label>
+      <input type="text" id="modal-thumbnail" placeholder="Enter image URL" class="w-full p-3 rounded bg-neutral-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600">
+    </div>
+
+    <div class="mb-4">
+      <label for="modal-description" class="block text-sm font-medium mb-1">Description</label>
+      <textarea id="modal-description" placeholder="Enter product description" rows="4" class="w-full p-3 rounded bg-neutral-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600"></textarea>
+    </div>
+
+    <div class="mb-4">
+      <label for="modal-category" class="block text-sm font-medium mb-1">Category</label>
+      <select id="modal-category" class="w-full p-3 rounded bg-neutral-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600">
+        <option value="">Select Category</option>
+        <option value="Jersey">Jersey</option>
+        <option value="Shoes">Football Shoes</option>
+        <option value="Balls">Balls</option>
+        <option value="Training">Training Equipment</option>
+        <option value="Accessories">Accessories</option>
+        <option value="Lifestyle">Lifestyle</option>
+      </select>
+    </div>
+
+    <div class="flex items-center justify-between mt-6">
+      <label class="inline-flex items-center space-x-2">
+        <input type="checkbox" id="modal-featured" class="form-checkbox h-5 w-5 text-red-600">
+        <span class="text-sm font-medium">Featured</span>
+      </label>
+
+      <div class="flex space-x-3">
+        <button onclick="closeModal()" class="px-4 py-2 border rounded border-gray-400 hover:bg-gray-800 transition-colors">Cancel</button>
+        <button onclick="submitProduct()" class="px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition-colors">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- AJAX Loading Overlay -->
+<div id="ajax-loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+  <div class="flex flex-col items-center">
+    <svg class="animate-spin h-12 w-12 text-white mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+    </svg>
+    <span class="text-white font-semibold">Processing...</span>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="fixed top-5 right-5 flex flex-col gap-3 z-50"></div>
+
+
+<!-- Include Modal -->
+{% include 'modal.html' %}
+
+
+<style>
+/* Toast base style */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 250px;
+  max-width: 320px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: #333;
+  color: white;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-size: 0.875rem;
+  z-index: 9999;
+}
+
+/* Toast types */
+.toast.success { background-color: #16a34a; }   /* green */
+.toast.error   { background-color: #dc2626; }   /* red */
+.toast.info    { background-color: #2563eb; }   /* blue */
+.toast.warning { background-color: #f59e0b; }   /* yellow/orange */
+
+/* Icon inside toast */
+.toast svg {
+  height: 1.25rem;
+  width: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* Message inside toast */
+.toast-message {
+  flex: 1;
+}
+
+/* Close button */
+.toast button {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Show animation */
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+</style>
+
+
+<script>
+const PRODUCTS_API_ENDPOINT = "{% url 'main:list_products_ajax' %}";
+const CURRENT_USER_ID = "{{ user.id|default_if_none:'' }}";
+
+let allProductsData = [];
+let activeFilter = 'all';
+let editingProductId = null;
+
+const loadingSpinner = document.getElementById('loading');
+const errorMessage = document.getElementById('error');
+const emptyStateDisplay = document.getElementById('empty');
+const productsGridContainer = document.getElementById('grid');
+const ajaxOverlay = document.getElementById('ajax-loading-overlay');
+
+function displayPageSection({ showLoading=false, showError=false, showEmpty=false, showGrid=false }) {
+  loadingSpinner.classList.toggle('hidden', !showLoading);
+  errorMessage.classList.toggle('hidden', !showError);
+  emptyStateDisplay.classList.toggle('hidden', !showEmpty);
+  productsGridContainer.classList.toggle('hidden', !showGrid);
+}
+
+function showToast(message, type='info', duration=3500) {
+  const container = document.getElementById('toast-container');
+
+  let icon = '';
+  switch(type) {
+    case 'success': 
+      icon = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'; break;
+    case 'error': 
+      icon = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>'; break;
+    case 'info': 
+      icon = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 12h.01"/></svg>'; break;
+    case 'warning':
+      icon = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>'; break;
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `${icon}<div class="toast-message">${message}</div><button onclick="this.parentElement.remove()">×</button>`;
+
+  container.appendChild(toast);
+
+  setTimeout(() => toast.classList.add('show'), 100);
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(()=>toast.remove(),400); }, duration);
+}
+
+// Show overlay and return hide function
+function showAjaxLoading(minDuration = 500) {
+  const overlay = document.getElementById('ajax-loading-overlay');
+  overlay.classList.remove('hidden');
+  const start = Date.now();
+  return () => {
+    const elapsed = Date.now() - start;
+    const remaining = minDuration - elapsed;
+    setTimeout(() => overlay.classList.add('hidden'), remaining > 0 ? remaining : 0);
+  };
+}
+
+
+function buildProductCardElement(product) {
+  const article = document.createElement('article');
+  article.className = 'bg-black rounded-lg border border-gray-800 hover:shadow-2xl hover:scale-[1.02] transform transition-all duration-300 overflow-hidden flex flex-col h-full';
+
+  const thumbnailHtml = `
+    <a href="/product/${product.id}/" class="block aspect-[16/9] relative overflow-hidden group">
+      ${product.thumbnail 
+        ? `<img src="${product.thumbnail}" alt="${product.name}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" onerror="this.src='/static/image/no-product.png'">`
+        : `<div class="w-full h-full bg-gray-900 flex items-center justify-center text-gray-500 text-sm">No Image</div>`}
+      <div class="absolute top-3 left-3 flex space-x-2">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-700 text-white">${product.category || 'Other'}</span>
+        ${product.is_featured ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-yellow-500 text-black">Featured</span>` : ''}
+        ${product.views > 20 ? `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-red-500 text-white">Hot</span>` : ''}
+      </div>
+    </a>
+  `;
+
+  let starsHtml = '';
+  const rating = product.rating || 5;
+  for (let i=1; i<=5; i++) {
+    starsHtml += `<img src="/static/image/gambarbintang2.jpg" class="h-4 w-4 ${i>rating ? 'opacity-50' : ''}">`;
+  }
+
+  const isOwner = CURRENT_USER_ID && Number(CURRENT_USER_ID) === Number(product.user_id);
+  const editDeleteButtons = isOwner 
+    ? `<div class="flex space-x-3">
+        <button onclick="openEditModal(${product.id})" class="text-gray-400 hover:text-gray-200 text-sm transition-colors">Edit</button>
+        <button onclick="deleteProduct(${product.id})" class="text-red-500 hover:text-red-700 text-sm transition-colors">Delete</button>
+      </div>` 
+    : '';
+
+  article.innerHTML = `
+    ${thumbnailHtml}
+    <div class="p-5 text-white flex flex-col flex-grow">
+      <h3 class="text-lg font-semibold mb-3 line-clamp-2 leading-tight min-h-[3rem]">
+        <a href="/product/${product.id}/" class="hover:text-red-500 transition-colors">${product.name}</a>
+      </h3>
+      <div class="mb-3">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs text-gray-400">${product.views || 0} views</span>
+          <time datetime="${product.created_at || ''}" class="text-xs text-gray-400">${product.created_at || ''}</time>
+        </div>
+        <div class="flex">${starsHtml}</div>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow min-h-[4.5rem]">${product.description || ''}</p>
+      <div class="mb-4">
+        <span class="text-lg font-semibold text-white">Rp ${Number(product.price || 0).toLocaleString('id-ID')}</span>
+      </div>
+      <div class="pt-4 border-t border-gray-800 mt-auto flex justify-between items-center">
+        <a href="/product/${product.id}/" class="text-red-500 hover:text-red-600 font-medium text-sm transition-colors inline-flex items-center">Read more →</a>
+        ${editDeleteButtons}
+      </div>
+    </div>
+  `;
+  return article;
+}
+
+function renderAllProductCards(products) {
+  productsGridContainer.innerHTML = '';
+  products.forEach(p => productsGridContainer.appendChild(buildProductCardElement(p)));
+}
+
+function filterAndDisplayProducts() {
+  const filtered = activeFilter === 'all'
+    ? allProductsData
+    : allProductsData.filter(p => Number(p.user_id) === Number(CURRENT_USER_ID));
+  
+  if (filtered.length === 0) displayPageSection({ showEmpty:true });
+  else {
+    renderAllProductCards(filtered);
+    displayPageSection({ showGrid:true });
+  }
+}
+
+async function fetchProductsFromServer() {
+  try {
+    displayPageSection({ showLoading:true });
+    const res = await fetch(PRODUCTS_API_ENDPOINT);
+    const data = await res.json();
+    allProductsData = data || [];
+    filterAndDisplayProducts();
+  } catch(err) {
+    console.error(err);
+    errorMessage.innerText = 'Error loading products.';
+    displayPageSection({ showError:true });
+  }
+}
+
+// ---------------- CRUD AJAX ----------------
+async function createProduct(productData) {
+  const hideLoading = showAjaxLoading(700); // overlay minimal 0.7 detik agar terlihat
+  try {
+    const res = await fetch("{% url 'main:create_product_ajax' %}", {
+      method:"POST", headers:{'Content-Type':'application/json'}, body:JSON.stringify(productData)
+    });
+    const result = await res.json();
+    if(result.status==='success') {
+      allProductsData.unshift(result.product);
+      filterAndDisplayProducts();
+      showToast('Product berhasil dibuat!', 'success');
+    } else showToast(result.message, 'error');
+  } catch(err) {
+    console.error(err);
+    showToast('Terjadi kesalahan saat membuat product', 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+async function updateProduct(productId, updatedData) {
+  const hideLoading = showAjaxLoading(700);
+  try {
+    const res = await fetch(`/ajax/product/${productId}/update/`, {
+      method:"POST", headers:{'Content-Type':'application/json'}, body:JSON.stringify(updatedData)
+    });
+    const result = await res.json();
+    if(result.status==='success') {
+      const idx = allProductsData.findIndex(p=>Number(p.id)===Number(productId));
+      if(idx!==-1) allProductsData[idx] = result.product;
+      filterAndDisplayProducts();
+      showToast('Product berhasil diperbarui!', 'success');
+    } else showToast(result.message,'error');
+  } catch(err) {
+    console.error(err);
+    showToast('Terjadi kesalahan saat update product','error');
+  } finally {
+    hideLoading();
+  }
+}
+
+async function deleteProduct(productId) {
+  if(!confirm("Anda yakin ingin menghapus produk ini?")) return;
+  const hideLoading = showAjaxLoading(700);
+  try {
+    const res = await fetch(`/ajax/product/${productId}/delete/`, { method:"DELETE" });
+    const result = await res.json();
+    if(result.status==='success') {
+      allProductsData = allProductsData.filter(p=>Number(p.id)!==Number(productId));
+      filterAndDisplayProducts();
+      showToast('Product berhasil dihapus!', 'success');
+    } else showToast(result.message,'error');
+  } catch(err) {
+    console.error(err);
+    showToast('Terjadi kesalahan saat hapus product','error');
+  } finally {
+    hideLoading();
+  }
+}
+
+
+// ---------------- Modal ----------------
+function openEditModal(productId) {
+  const p = allProductsData.find(p => Number(p.id) === Number(productId));
+  if (!p) return;
+  editingProductId = productId;
+
+  document.getElementById('modal-title').innerText = 'Edit Product';
+  document.getElementById('modal-name').value = p.name || '';
+  document.getElementById('modal-price').value = p.price || '';
+  document.getElementById('modal-thumbnail').value = p.thumbnail || '';
+  document.getElementById('modal-description').value = p.description || '';
+  document.getElementById('modal-category').value = p.category || '';
+  document.getElementById('modal-featured').checked = !!p.is_featured;
+  
+
+  document.getElementById('product-form-modal').classList.remove('hidden');
+}
+
+function closeModal() {
+  editingProductId=null;
+  document.getElementById('product-form-modal').classList.add('hidden');
+}
+
+async function submitProduct() {
+  const data = {
+    name: document.getElementById('modal-name').value,
+    price: document.getElementById('modal-price').value,
+    thumbnail: document.getElementById('modal-thumbnail').value,
+    description: document.getElementById('modal-description').value,
+    category: document.getElementById('modal-category').value,
+    is_featured: document.getElementById('modal-featured').checked
+  };
+
+  const hideLoading = showAjaxLoading(500);
+
+  try {
+    let url = editingProductId 
+      ? `/ajax/product/${editingProductId}/update/` 
+      : "{% url 'main:create_product_ajax' %}";
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+
+    if(result.status !== 'success') {
+      showToast(result.message, 'error');
+      return;
+    }
+
+    showToast(editingProductId ? 'Produk berhasil diperbarui!' : 'Produk berhasil dibuat!', 'success');
+
+    closeModal();
+
+    // **REFRESH data dari server** agar grid terbaru tampil otomatis
+    await fetchProductsFromServer();
+
+    editingProductId = null;
+
+  } catch(err) {
+    showToast('Terjadi kesalahan: ' + err, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+
+
+
+
+
+
+
+// ---------------- Events ----------------
+document.getElementById('filter-all').addEventListener('click',()=>{activeFilter='all';filterAndDisplayProducts();});
+document.getElementById('filter-my').addEventListener('click',()=>{activeFilter='my';filterAndDisplayProducts();});
+document.getElementById('btn-add-product').addEventListener('click',()=> {
+  editingProductId=null;
+  document.getElementById('modal-title').innerText='Add Product';
+  document.getElementById('modal-name').value='';
+  document.getElementById('modal-price').value='';
+  document.getElementById('modal-thumbnail').value='';
+  document.getElementById('modal-description').value='';
+  document.getElementById('product-form-modal').classList.remove('hidden');
+});
+document.getElementById('btn-add-empty')?.addEventListener('click',()=>document.getElementById('btn-add-product').click());
+document.getElementById('btn-refresh').addEventListener('click', async () => {
+  const hideLoading = showAjaxLoading(500); // overlay processing minimal 500ms
+  try {
+    await fetchProductsFromServer();
+  } finally {
+    hideLoading();
+  }
+});
+
+// ---------------- Init ----------------
+fetchProductsFromServer();
+</script>
 {% endblock content %}

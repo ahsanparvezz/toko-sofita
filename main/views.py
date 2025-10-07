@@ -11,6 +11,10 @@ from django.contrib.auth.decorators import login_required
 import datetime
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from django.contrib.auth.models import User
 
 # Create your views here.
 @login_required(login_url='/login')
@@ -22,7 +26,6 @@ def show_main(request):
     else:
         product_list = Product.objects.filter(user=request.user)
 
-    # Tambahkan properti bintang
     for product in product_list:
         rating = int(product.rating or 0)
         if rating > 5:  
@@ -81,8 +84,29 @@ def show_xml(request):
 
 def show_json(request):
     product_list = Product.objects.all()
-    json_data = serializers.serialize("json", product_list)
-    return HttpResponse(json_data, content_type="application/json")
+    data = []
+
+    for product in product_list:
+        thumbnail_url = ''
+        if getattr(product, 'thumbnail', None) and hasattr(product.thumbnail, 'url'):
+            thumbnail_url = product.thumbnail.url
+
+        data.append({
+            'id': str(product.id),
+            'name': product.name,
+            'price': product.price,
+            'description': product.description,
+            'rating': product.rating,
+            'stock': getattr(product, 'stock', None),
+            'category': getattr(product, 'category', None),
+            "thumbnail": product.thumbnail,
+            'views': getattr(product, 'views', 0),
+            'created_at': product.created_at.isoformat() if getattr(product, 'created_at', None) else '',
+            'user_id': product.user.id if product.user else None,
+            'is_featured': bool(getattr(product, 'is_featured', False)),
+        })
+
+    return JsonResponse(data, safe=False)
 
 def show_xml_by_id(request, id):
     try:
@@ -97,11 +121,33 @@ def show_xml_by_id(request, id):
 
 def show_json_by_id(request, id):
     try:
-        product_item = Product.objects.get(pk=id)
-        json_data = serializers.serialize("json", [product_item])
-        return HttpResponse(json_data, content_type="application/json")
+        product = Product.objects.select_related('user').get(pk=id)
+
+        # pastikan thumbnail bisa diakses
+        thumbnail_url = ''
+        if getattr(product, 'thumbnail', None) and hasattr(product.thumbnail, 'url'):
+            thumbnail_url = product.thumbnail.url
+
+        data = {
+            "id": product.id,
+            "name": product.name,
+            "category": getattr(product, 'category', None),
+            "price": product.price,
+            "stock": getattr(product, 'stock', None),
+            "description": product.description,
+            "thumbnail": str(product.thumbnail) if product.thumbnail else "",
+            "is_featured": bool(getattr(product, 'is_featured', False)),
+            "rating": product.rating,
+            "user_id": product.user.id if product.user else None,
+            "user_username": product.user.username if product.user else None,
+            "views": getattr(product, 'views', 0),
+            "created_at": product.created_at.isoformat() if getattr(product, 'created_at', None) else '',
+        }
+        return JsonResponse(data)
     except Product.DoesNotExist:
-        return HttpResponse(status=404)
+        return JsonResponse({'detail': 'Not found'}, status=404)
+
+
 
 def register(request):
     form = UserCreationForm()
@@ -153,6 +199,151 @@ def delete_product(request, id):
     product = get_object_or_404(Product, pk=id)
     product.delete()
     return HttpResponseRedirect(reverse('main:show_main'))
+
+@login_required(login_url='/login')
+def list_products_ajax(request):
+    """Read: Semua produk (atau milik user)"""
+    filter_type = request.GET.get("filter", "all")
+    if filter_type == "all":
+        products = Product.objects.all()
+    else:
+        products = Product.objects.filter(user=request.user)
+
+    data = [
+        {
+            "id": p.id,
+            "name": p.name,
+            "price": p.price,
+            "description": p.description,
+            "thumbnail": p.thumbnail,
+            "category": p.category,
+            "stock": p.stock,
+            "rating": p.rating,
+            "is_featured": p.is_featured,
+            "views": p.views,
+            "user_id": p.user.id if p.user else None,
+            "user_username": p.user.username if p.user else None,
+        } for p in products
+    ]
+    return JsonResponse(data, safe=False)
+
+@login_required(login_url='/login')
+def get_product_ajax(request, id):
+    """Read: Detail product by id"""
+    try:
+        product = Product.objects.get(pk=id)
+        data = {
+            "id": product.id,
+            "name": product.name,
+            "price": product.price,
+            "description": product.description,
+            "thumbnail": product.thumbnail,
+            "category": product.category,
+            "stock": product.stock,
+            "rating": product.rating,
+            "is_featured": product.is_featured,
+            "views": product.views,
+            "user_id": product.user.id if product.user else None,
+            "user_username": product.user.username if product.user else None,
+        }
+        # increment views setiap detail dibuka
+        product.increment_views()
+        return JsonResponse(data)
+    except Product.DoesNotExist:
+        return JsonResponse({"detail": "Product not found"}, status=404)
+
+@csrf_exempt
+@login_required(login_url='/login')
+def create_product_ajax(request):
+    """Create product via AJAX"""
+    if request.method == "POST":
+        data = json.loads(request.body)
+        product = Product.objects.create(
+            name=data.get("name"),
+            price=data.get("price"),
+            description=data.get("description", ""),
+            thumbnail=data.get("thumbnail", ""),
+            category=data.get("category", "shoes"),
+            stock=data.get("stock", 0),
+            rating=data.get("rating", 0),
+            user=request.user
+        )
+        return JsonResponse({
+            "status": "success",
+            "product": {
+                "id": product.id,
+                "name": product.name,
+                "price": product.price,
+            }
+        })
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+
+@csrf_exempt
+@login_required(login_url='/login')
+def update_product_ajax(request, id):
+    """Update product via AJAX"""
+    try:
+        product = Product.objects.get(pk=id, user=request.user)
+    except Product.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Product not found"}, status=404)
+
+    if request.method == "POST":
+        data = json.loads(request.body)
+        product.name = data.get("name", product.name)
+        product.price = data.get("price", product.price)
+        product.description = data.get("description", product.description)
+        product.thumbnail = data.get("thumbnail", product.thumbnail)
+        product.category = data.get("category", product.category)
+        product.stock = data.get("stock", product.stock)
+        product.rating = data.get("rating", product.rating)
+        product.is_featured = data.get("is_featured", product.is_featured)
+        product.save()
+        return JsonResponse({
+            "status": "success",
+            "product": {
+                "id": product.id,
+                "name": product.name,
+                "price": product.price,
+            }
+        })
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+@csrf_exempt
+@login_required(login_url='/login')
+def delete_product_ajax(request, id):
+    """Delete product via AJAX"""
+    try:
+        product = Product.objects.get(pk=id, user=request.user)
+    except Product.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Product not found"}, status=404)
+
+    if request.method == "DELETE":
+        product.delete()
+        return JsonResponse({"status": "success", "message": "Product deleted successfully"})
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+
+@csrf_exempt
+def login_ajax(request):
+    data = json.loads(request.body)
+    user = authenticate(request, username=data['username'], password=data['password'])
+    if user:
+        login(request, user)
+        now = datetime.datetime.now().isoformat()
+        response = JsonResponse({'status':'success', 'next':'/', 'last_login': now})
+        response.set_cookie('last_login', now)
+        return response
+    return JsonResponse({'status':'error', 'message':'Username atau password salah'})
+
+@csrf_exempt
+def register_ajax(request):
+    data = json.loads(request.body)
+    if User.objects.filter(username=data['username']).exists():
+        return JsonResponse({'status':'error', 'message':'Username sudah ada'})
+    if data['password1'] != data['password2']:
+        return JsonResponse({'status':'error', 'message':'Password tidak sama'})
+    user = User.objects.create_user(username=data['username'], password=data['password1'])
+    login(request, user)
+    return JsonResponse({'status':'success', 'next':'/'})
 
 
 
